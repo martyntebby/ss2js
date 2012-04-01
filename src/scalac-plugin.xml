@@ -1,0 +1,4 @@
+<plugin>
+  <name>ss2js</name>
+  <classname>ss2js.plugin.CompilerPlugin</classname>
+</plugin>

@@ -1,0 +1,50 @@
+<project name="ss2js" default="all">
+
+	<property name="src" location="src"/>
+	<property name="bin" location="bin"/>
+	<property name="jarfile" value="${bin}/${ant.project.name}.jar"/>
+	<property environment="env"/>
+	<property name="scala.home" value="${env.SCALA_HOME}"/>
+
+	<path id="scala.classpath">
+		<fileset dir="${scala.home}/lib"
+			includes="scala-library.jar, scala-compiler.jar"/>
+	</path>
+
+	<path id="plugin.classpath">
+		<path refid="scala.classpath"/>
+		<pathelement location="${jarfile}"/>
+	</path>
+
+	<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scala.classpath"/>
+
+	<target name="clean">
+		<delete dir="${bin}"/>
+	</target>
+
+	<target name="build">
+		<mkdir dir="${bin}"/>
+		<scalac srcdir="${src}" destdir="${bin}" classpathref="scala.classpath"/>
+		<jar jarfile="${jarfile}">
+			<fileset dir="${bin}"/>
+			<fileset dir="${src}"/>
+		</jar>
+	</target>
+
+	<target name="test">
+		<scalac srcdir="${src}" destdir="${bin}" classpathref="plugin.classpath"
+			force="true" addparams="-Xplugin:${jarfile} -Yno-imports">
+			<include name="*/sample/*.scala"/>
+		</scalac>
+<!--
+		<java classname="ss2js.sample.Main"
+			classpathref="plugin.classpath" failonerror="true" fork="true"/>
+-->
+		<java classname="ss2js.test.RunPlugin"
+			classpathref="plugin.classpath" failonerror="true" fork="true">
+			<arg value="eval"/>
+		</java>
+	</target>
+
+	<target name="all" depends="clean, build, test"/>
+</project>

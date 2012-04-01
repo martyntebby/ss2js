@@ -1,0 +1,41 @@
+ss2js
+-----
+A Scala compiler plugin (see http://www.scala-lang.org/node/140)
+that generates JavaScript from a subset of Scala language.
+It flags, as errors, constructs it does not handle.
+
+There are a number of similar projects (s2js, j2js, Scala+GWT).
+See http://altjs.org/ for many other alternatives.
+
+The rational for this is:
+	produce something simple and fast
+	obvious correlation between source and generated code
+	not target the whole scala language or library
+	not target a particular third party library
+
+Tested with OpenJDK 6 and Scala 2.9.1. SCALA_HOME must be set for ant.
+It produces code that has been tested in Rhino and V8 (should be portable).
+
+This is at an early stage of development
+There is a useable language subset, although I would like to extend it.
+More work is needed for the Scala library.
+See Sample.scala for what can be done. Run ant and see JavaScript in bin dir.
+
+Usage:
+  scalac -classpath ss2js.jar -Xplugin:ss2js.jar -Yno-imports <files>
+
+Limitations:
+  Does not use the standard (Predef) imports, use import ss2js.global._
+  Single compilation unit and package
+  Single name (object, class, constructor, def, val, var) per JS scope
+  Simple matches only (coressponding to JS switch)
+  Matches, trys and multiline ifs are effectively statements not expressions
+  Ordering of functions and classes is important for visibility
+  Single untyped try catch case with no guard
+  Unsupported:
+    varargs, lazy, override val
+    apply method, partial functions, operator overloading
+    case classes, concrete traits, package objects
+
+Martyn Tebby
+March 2012
