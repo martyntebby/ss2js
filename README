@@ -8,12 +8,12 @@ There are a number of similar projects (s2js, j2js, Scala+GWT).
 See http://altjs.org/ for many other alternatives.
 
 The rational for this is:
-	produce something simple and fast
-	obvious correlation between source and generated code
-	not target the whole scala language or library
-	not target a particular third party library
+  produce something simple and fast
+  obvious correlation between source and generated code
+  not target the whole scala language or library
+  not target a particular third party library
 
-Tested with OpenJDK 6 and Scala 2.9.1. SCALA_HOME must be set for ant.
+Tested with OpenJDK 6 and Scala 2.9.2. SCALA_HOME must be set for ant.
 It produces code that has been tested in Rhino and V8 (should be portable).
 
 This is at an early stage of development
@@ -29,13 +29,12 @@ Limitations:
   Single compilation unit and package
   Single name (object, class, constructor, def, val, var) per JS scope
   Simple matches only (coressponding to JS switch)
-  Matches, trys and multiline ifs are effectively statements not expressions
   Ordering of functions and classes is important for visibility
   Single untyped try catch case with no guard
   Unsupported:
     varargs, lazy, override val
-    apply method, partial functions, operator overloading
-    case classes, concrete traits, package objects
+    partial functions, operator overloading
+    case classes, non interface traits, package objects
 
 Martyn Tebby
-March 2012
+June 2012

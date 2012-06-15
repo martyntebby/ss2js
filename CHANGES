@@ -1,0 +1,11 @@
+0.1 - 1 April 2012
+	Initial upload, limited language support
+
+0.2 - 15 June 2012
+	rewrite to handle the below
+	handle if, match, try as expressions
+	no arg functions
+	multiple arg list functions
+	curried functions
+	by name function args
+	apply method

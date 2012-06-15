@@ -36,10 +36,6 @@
 			force="true" addparams="-Xplugin:${jarfile} -Yno-imports">
 			<include name="*/sample/*.scala"/>
 		</scalac>
-<!--
-		<java classname="ss2js.sample.Main"
-			classpathref="plugin.classpath" failonerror="true" fork="true"/>
--->
 		<java classname="ss2js.test.RunPlugin"
 			classpathref="plugin.classpath" failonerror="true" fork="true">
 			<arg value="eval"/>

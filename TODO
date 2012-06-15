@@ -1,7 +1,10 @@
 comprehensive tests
-if, match and try as expressions
-no arg methods
 detect where ordering of classes and methods will fail in JS
-properly defined global, or adapt some of scala lib a la GWT.
+properly defined global, or adapt some of scala lib a la GWT
 multiple packages and files
 optimize constructor call chain
+
+concrete trait initialization
+isInstanceOf method
+allow replacement of method calls with custom code
+

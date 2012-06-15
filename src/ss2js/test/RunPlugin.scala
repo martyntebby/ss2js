@@ -15,15 +15,19 @@ import javax.script.ScriptEngineManager
  */
 object RunPlugin {
 
-  val runAfter = "typer"
+  val runAfter = "typer" // typer refchecks uncurry
   val outdir = "bin"
   val files = List(
-      "src/ss2js/sample/Sample.scala"
-,      "src/ss2js/sample/Simple.scala"
+      "src/ss2js/sample/Simple.scala"
+,      "src/ss2js/sample/Sample.scala"
+,      "src/ss2js/sample/Tests.scala"
       )
   val args = Array(
     "-Yno-imports",
-//  "-Xprint:" + runAfter,
+//    "-Ystop-after:ss2js",
+  "-Xprint:" + runAfter,
+//  "-Xprint:ss2js",
+//  "-Ywarn-all",
 //  "-Ybrowse:" + runAfter,
 //  "-Yshow-trees",
     "-classpath", "bin",

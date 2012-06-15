@@ -1,7 +1,10 @@
 package ss2js.plugin
 
 import scala.tools.nsc.plugins.Plugin
+import scala.tools.nsc.plugins.PluginComponent
 import scala.tools.nsc.Global
+import scala.tools.nsc.util.trace
+import scala.tools.nsc.Phase
 
 /**
  * Scala compiler plugin that generates JavaScript.
@@ -13,12 +16,9 @@ import scala.tools.nsc.Global
  *	Does not use the standard (Predef) imports, use import ss2js.global._
  *	Single constructor per class
  *	Cannot have methods or variables with the same name
- *	Ignores concrete trait methods
  *	Currently unsupported:
- *		match, lazy, operator overloading, case classes
- *		companion objects, apply method
- *
- * @author Martyn Tebby
+ *		lazy, operator overloading, case classes
+ *		companion objects
  */
 class CompilerPlugin(val global: Global, runAfter: String, verbose: Boolean)
     extends Plugin {
@@ -27,17 +27,5 @@ class CompilerPlugin(val global: Global, runAfter: String, verbose: Boolean)
 
   val name = "ss2js"
   val description = "converts a subset of Scala to JavaScript"
-  val components = List(new TreeComponent(global, name, runAfter, verbose))
-/*
-  private var verbose = false
-
-  override val optionsHelp: Option[String] =
-    Some("  -P:" + name + ":verbose        internal tracing")
-
-  override def processOptions(options: List[String], error: String => Unit) {
-    options.foreach { opt =>
-      if(opt == "verbose") verbose = true
-    }
-  }
-*/
+  val components = List(new PlugComponent(global, name, runAfter, verbose))
 }

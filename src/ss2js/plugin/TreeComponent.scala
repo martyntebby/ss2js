@@ -3,7 +3,7 @@ package ss2js.plugin
 import scala.tools.nsc.Global
 
 /**
- * Main tree handling.
+ * Main tree handling (old version - not currently used).
  * Returns JavaScript representation.
  * see end of scala.reflect.generic.Trees
  */
@@ -15,7 +15,7 @@ class TreeComponent(override val global: Global, phaseName: String,
 
     /** primary method */
     override def doTree(tree: Tree): String = {
-      trace("// " + treeInfo(tree))
+      trace("// curr: " + treeInfo(tree))
       tree match {
           case p: PackageDef => doPackage(p)
           case i: Import => ""
@@ -38,11 +38,12 @@ class TreeComponent(override val global: Global, phaseName: String,
           case Assign(lhs, rhs) => doTree(lhs) + " = " + doTree(rhs)
 
           // TODO: these probably need to descend
-          case New(tpt) => "new " + tpt.symbol.name // + doTree(tpt) - TODO: handle other package types
+          case New(tpt) => "new " + doName(tpt.symbol.name) // + doTree(tpt) - TODO: handle other package types
           case t: This => doThis(t)
-          case s: Super => s.symbol.superClass.name + ".prototype"
+          case s: Super => doName(s.symbol.superClass.name) + ".prototype"
 
           case Throw(expr) => "throw " + doTree(expr)
+          case Return(ret2: Return) => doTree(ret2)
           case Return(expr) => "return " + doTree(expr)
           case Ident(name) => doName(name)
           case Literal(Constant(())) => "undefined"
@@ -50,13 +51,13 @@ class TreeComponent(override val global: Global, phaseName: String,
           case t: TypeTree => ""
 
           case t: Tree if(t.isEmpty) => ""
-          case _ => error(tree, "not handled"); ""
+          case _ => error(tree, "not handled")
         }
     }
 
     /** do list of trees */
     private def doTrees(list: List[Tree]) =
-      list.map(doTree).filter(_ != "").mkString(nl)
+      list.map(doTree(_)).filter(_ != "").mkString(nl)
 
     /** outer (only) package, adds ss2js methods */
     private def doPackage(p: PackageDef) = {
@@ -82,7 +83,7 @@ class TreeComponent(override val global: Global, phaseName: String,
       outdent + nl + "}" + nl +
       "function ScalaObject() {}  // dummy" + nl + nl +
       doTrees(p.stats) + nl + // main body
-      p.stats.filter(hasMain).map(_.symbol.name + ".main();").mkString(nl) +
+      p.stats.filter(hasMain).map(i => doName(i.symbol.name) + ".main();").mkString(nl) +
       outdent + nl + "}());" + nl
 
       NameScope.pop()
@@ -133,20 +134,17 @@ class TreeComponent(override val global: Global, phaseName: String,
           str += "if(arguments[" + argslen + "]) " +
             "this." + OUTER + " = arguments[" + argslen + "]" + nl
         }
-        // TODO: tidy up
         // TODO: call trait init methods
-        val lines = doTree(ctor.rhs) ::
-            vals.map(doTree(_)) ++
-            body.filter(!_.isInstanceOf[ValOrDefDef]).map(doTree)
-        str += lines.filter(_ != "").mkString(nl)
+        val trees = ctor.rhs :: vals ++ body.filter(!_.isInstanceOf[ValOrDefDef])
+        str += doTrees(trees)
         str += outdent + nl + "}" + nl
       }
 
       // setup inheritence
       if(!c.symbol.isTrait) {
-        val parent = c.symbol.superClass.name
+        val parent = doName(c.symbol.superClass.name)
         val traits = c.symbol.mixinClasses.
-            map(_.decodedName).mkString("[", ", ", "]")
+            map(i => doName(i.name)).mkString("[", ", ", "]")
         str += INHERITS + "(" + name + ", " + parent + ", " + traits + ")" + nl
       }
 
@@ -157,7 +155,7 @@ class TreeComponent(override val global: Global, phaseName: String,
       if(c.symbol.hasModuleFlag) {
         // TODO: recheck
         str += (if(c.symbol.owner.isClass && !c.symbol.owner.hasPackageFlag) "this."
-                  // c.symbol.owner.name + ".prototype."
+                  // doName(c.symbol.owner.name) + ".prototype."
                 else "var ")
         str += name + " = new " + name + "(this);  // object"
       }
@@ -178,7 +176,7 @@ class TreeComponent(override val global: Global, phaseName: String,
     private def doParams(params: List[ValDef]) =
       params.map { v =>
         if(v.symbol.isByNameParam)
-          error(v, "input types must be specified, even if empty")
+          error(v, "call by name not supported, use () => ")
         doName(v.name)
       }.mkString("(", ", ", ")")
 
@@ -199,16 +197,16 @@ class TreeComponent(override val global: Global, phaseName: String,
       val rest = doParams(d) + doBlock(d.rhs, true, last)
       NameScope.pop()
       if(!d.symbol.owner.isClass) "function " + name + rest
-      else d.symbol.owner.name + ".prototype." + name + " = function " + rest
+      else doName(d.symbol.owner.name) + ".prototype." + name + " = function " + rest
     }
 
     /** format a block of code */
     private def doBlock(tree: Tree, braces: Boolean, last: String = ""): String = {
       (if(braces) " {" + indent + nl else "") +
         (tree match {
-          case Block(List(stat), Literal(Constant(()))) => // single item and unit return
+          case Block(List(stat), Literal(Constant(()))) => // single item unit return
             doTree(stat)
-          case Block(List(), expr) => // just return part
+          case Block(List(), expr) => // just return expression
             doBlock(expr, false, last)
           case Block(_, _) if !braces => // add braces to real block
             doBlock(tree, true, last)
@@ -216,8 +214,9 @@ class TreeComponent(override val global: Global, phaseName: String,
             doTrees(stats) + nl + doBlock(expr, false, last)
           case Literal(Constant(())) => // unit
             if(last != "") last + doTree(tree) else ""
+          // TODO: maybe move to doApply
           case Apply(Select(_, name), List(Literal(Constant(jscript: String))))
-          	if(doName(name) == "jsni") => // native javascript
+          	if(doName(name) == "jsni") => // native javascript method
           	  jscript
           case _ =>
             last + doTree(tree)
@@ -239,14 +238,18 @@ class TreeComponent(override val global: Global, phaseName: String,
       val name = NameScope.add(v)
       if(v.mods.isLazy)
         error(v, "lazy not supported")
-      val prefix = if(!v.symbol.owner.isClass) "var "
-        else if(v.symbol.isSynthetic && name.contains("$default$")) {
+
+      val prefix = if(v.symbol.owner.isClass) {
+        if(v.symbol.isSynthetic && name.contains("$default$")) {
+          doName(v.symbol.owner.name) + ".prototype."
           // TODO: generalize or remove
           if(v.rhs.isInstanceOf[This])
             error(v.rhs, "cannot have this as default parameter")
-          v.symbol.owner.name + ".prototype."
         }
         else "this."
+      }
+      else "var "
+        
       if(v.symbol.isParamAccessor) prefix + name + " = " + name
       else if(v.rhs.isEmpty) prefix + name
       else prefix + name + " = " + doTree(v.rhs)
@@ -318,7 +321,8 @@ class TreeComponent(override val global: Global, phaseName: String,
       def catchesMatch = t.catches match {
         case List() => ""
         case List(CaseDef(pat, guard, body)) =>
-          if(!guard.isEmpty) error(guard, "catch guard is not supported")
+          if(!guard.isEmpty)
+            error(guard, "catch guard is not supported")
           "catch(" + catchName(pat) + ")" + doBlock(body, true) + nl
         case _ => error(t.catches(1), "only one catch allowed")
       }
@@ -352,7 +356,7 @@ class TreeComponent(override val global: Global, phaseName: String,
       (if(a.symbol.name.isOperatorName && !a.symbol.isConstructor && args.length == 1)
         " " + doTree(args(0))  // binary operator call
       else
-        args.map(doTree).mkString("(", ", ", ")"))
+        args.map(doTree(_)).mkString("(", ", ", ")"))
     }
 
     /** method selection */
@@ -372,7 +376,7 @@ class TreeComponent(override val global: Global, phaseName: String,
     /** find correct this at different levels in heirarchy */
     private def doThis(t: This): String = {
       val chain = NameScope.symbol.enclClassChain
-      def doError(msg: String) = { error(t, msg + ": " + t.symbol + "  " + chain); "" }
+      def doError(msg: String) = error(t, msg + ": " + t.symbol + "  " + chain)
       def findThis(chain: List[Symbol]): String = {
         if(chain.isEmpty) doError("did not find outer")
         else if(chain.head == NoSymbol) doError("NoSymbol in chain")

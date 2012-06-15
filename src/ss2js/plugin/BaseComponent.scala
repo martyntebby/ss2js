@@ -9,6 +9,7 @@ import scala.collection.mutable.HashSet
 
 /**
  * Helper methods for tree handling, and basic setup.
+ * Old version - not currently used.
  */
 abstract class BaseComponent(val global: Global, val phaseName: String,
     runAfter: String, verbose: Boolean)
@@ -80,7 +81,8 @@ abstract class BaseComponent(val global: Global, val phaseName: String,
     /** name to string */
     protected def doName(n: Name): String = n.decode.trim
 
-    protected def treeInfo(tree: Tree) = {
+    protected def treeInfo(tree: Tree): String = {
+      if(tree == null) return "null"
       "cls: " + tree.getClass.getSimpleName +
       "   tpe: " + tree.tpe +
       (if(tree.hasSymbol)
@@ -108,10 +110,10 @@ abstract class BaseComponent(val global: Global, val phaseName: String,
     protected def trace(msg: Any) = if(verbose) println(msg)
 
     // error reporting
-    protected def error(t: Tree, msg: String) = reporter.error(
-        t.pos, phaseName + ": " + msg + ": " + t.getClass.getSimpleName)
-    protected def warning(t: Tree, msg: String) = reporter.warning(
-        t.pos, phaseName + ": " + msg + ": " + t.getClass.getSimpleName)
+    protected def error(t: Tree, msg: String) = { reporter.error(
+        t.pos, phaseName + ": " + msg + ": " + t.getClass.getSimpleName); "" }
+    protected def warning(t: Tree, msg: String) = { reporter.warning(
+        t.pos, phaseName + ": " + msg + ": " + t.getClass.getSimpleName); "" }
 
     // see https://developer.mozilla.org/en/JavaScript/Reference/Reserved_Words
     private val jsReservedWords = Set(
