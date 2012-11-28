@@ -1,4 +1,4 @@
-package ss2js.plugin
+package ss2js.plugin.old
 
 import scala.tools.nsc.Global
 

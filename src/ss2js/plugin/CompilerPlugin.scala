@@ -1,9 +1,9 @@
 package ss2js.plugin
 
+import java.io.PrintWriter
 import scala.tools.nsc.plugins.Plugin
 import scala.tools.nsc.plugins.PluginComponent
 import scala.tools.nsc.Global
-import scala.tools.nsc.util.trace
 import scala.tools.nsc.Phase
 
 /**
@@ -28,4 +28,27 @@ class CompilerPlugin(val global: Global, runAfter: String, verbose: Boolean)
   val name = "ss2js"
   val description = "converts a subset of Scala to JavaScript"
   val components = List(new PlugComponent(global, name, runAfter, verbose))
+
+
+  class PlugComponent(
+    val global: Global, val phaseName: String,
+    runAfter: String, verbose: Boolean)
+    extends PluginComponent {
+
+  import global._
+
+  val runsAfter = List(runAfter)
+  override val runsRightAfter = Some(runAfter)
+
+  def newPhase(prev: Phase) = new StdPhase(prev) {
+    def apply(unit: CompilationUnit) {
+      val outfile = global.settings.outdir.value +
+          java.io.File.separator + unit.source + ".js"
+      val out = new PrintWriter(outfile)
+      new TreePrint[global.type](global)(out).print(unit)
+      out.close()
+    }
+  }
+}
+
 }

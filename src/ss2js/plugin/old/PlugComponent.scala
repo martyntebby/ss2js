@@ -1,4 +1,4 @@
-package ss2js.plugin
+package ss2js.plugin.old
 
 import java.io.PrintWriter
 import scala.tools.nsc.plugins.PluginComponent
