@@ -141,11 +141,13 @@ class TreePrint[G <: Global](val global: G)(out: PrintWriter) extends Utility {
 
     /** package */
     private def doPackage(p: PackageDef) {
-      print("// package " + p.name); println()
-      print("var " + p.name); println()
-      print("(function(" + p.name + ") {"); indent; println()
-      // TODO: fix generation of octal for \n in print
-//      print("\"use strict\";"); println()
+      val syms = p.symbol.ownerChain.filterNot(_.name.startsWith('<'))
+      syms.reverse.foreach { s =>
+        print("var " + s.name + "  // package "); println()
+        print("(function(" + s.name + ") {"); indent; println()
+        // TODO: fix generation of octal for \n in print
+        // print("\"use strict\";"); println()
+      }
 
       p.stats.foreach(print); println()
 
@@ -153,7 +155,9 @@ class TreePrint[G <: Global](val global: G)(out: PrintWriter) extends Utility {
       p.stats.filter(hasMain).map { i =>
         print(i.symbol.name); print(".main()"); println();
       }
-      undent; println(); print("})(" + p.name + " || (" + p.name + " = {}))")
+      syms.foreach { s =>
+        undent; println(); print("})(" + s.name + " || (" + s.name + " = {}))")
+      }
     }
 
     /** class, object or trait */
