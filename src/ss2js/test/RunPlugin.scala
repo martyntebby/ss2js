@@ -41,7 +41,7 @@ object RunPlugin {
         return
     val jsfiles = files.map { f =>
       outdir + f.substring(f.lastIndexOf("/")) + ".js" }
-    run(jsfiles)
+    RunJS.run(jsfiles)
   }
 
   def compile(args: List[String]) = {
@@ -56,19 +56,6 @@ object RunPlugin {
     run.compile(command.files)
     reporter.printSummary()
     !reporter.hasErrors
-  }
-
-  // eval javascript files
-  def run(files: List[String]) {
-    val manager = new ScriptEngineManager()
-    val engine = manager.getEngineByExtension("js")
-    files.foreach { file =>
-      println("run " + file)
-      val reader = new FileReader(file)
-      engine.eval(reader)
-      reader.close()
-    }
-    println("OK")
   }
 
 }

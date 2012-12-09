@@ -42,5 +42,12 @@
 		</java>
 	</target>
 
+	<target name="runjs">
+		<java classname="ss2js.test.RunJS"
+			classpathref="plugin.classpath" failonerror="true" fork="true">
+			<arg value="test.js"/>
+		</java>		
+	</target>
+
 	<target name="all" depends="clean, build, test"/>
 </project>
