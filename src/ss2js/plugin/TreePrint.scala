@@ -141,10 +141,13 @@ class TreePrint[G <: Global](val global: G)(out: PrintWriter) extends Utility {
 
     /** package */
     private def doPackage(p: PackageDef) {
-      val syms = p.symbol.ownerChain.filterNot(_.name.startsWith('<'))
-      syms.reverse.foreach { s =>
-        print("var " + s.name + "  // package "); println()
-        print("(function(" + s.name + ") {"); indent; println()
+      val empty = p.name.startsWith("<empty>")
+      val base = p.symbol.owner.name.startsWith("<root>")
+      val name = p.name.toString
+      if(!empty) {
+        if(base)
+          print("var " + name); println()
+        print("(function(ss2js_package) {  // package " + name); indent; println()
         // TODO: fix generation of octal for \n in print
         // print("\"use strict\";"); println()
       }
@@ -155,15 +158,16 @@ class TreePrint[G <: Global](val global: G)(out: PrintWriter) extends Utility {
       p.stats.filter(hasMain).map { i =>
         print(i.symbol.name); print(".main()"); println();
       }
-      syms.foreach { s =>
-        undent; println(); print("})(" + s.name + " || (" + s.name + " = {}))")
+      if(!empty) {
+        val name2 = (if(!base) p.symbol.owner.name + "." else "") + name
+        undent; println(); print("})(" + name2 + " || (" + name2 + " = {}))")
       }
     }
 
     /** class, object or trait */
     private def doClass(c: ImplDef) {
       val name = scope.addPush(c)
-      print("// " + c.keyword + " " + name + " extends " + c.symbol.superClass.name); println()
+      print("// " + c.keyword + " " + name + " extends " + tpeName(c.symbol.superClass)); println()
       val body = c.impl.body
       val (defs, others) = body.partition(t =>
         t.isInstanceOf[DefDef] ||(t.hasSymbol && t.symbol.isSynthetic))
@@ -190,11 +194,13 @@ class TreePrint[G <: Global](val global: G)(out: PrintWriter) extends Utility {
         println()
       }
 
+      print("ss2js_package." + name + " = " + name); println()
+
       // setup inheritence
       if(!c.symbol.isTrait) {
-        val parent = doName(c.symbol.superClass.name)
+        val parent = tpeName(c.symbol.superClass)
         val traits = c.symbol.mixinClasses.
-            map(i => doName(i.name)).mkString("[", ", ", "]")
+            map(i => tpeName(i)).mkString("[", ", ", "]")
         print(INHERITS + "(" + name + ", " + parent + ", " + traits + ")")
         println()
       }

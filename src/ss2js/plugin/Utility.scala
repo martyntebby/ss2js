@@ -18,7 +18,12 @@ abstract class Utility {
 
   def trace(msg: Any) = if(verbose) println(msg)
 
-  protected def treeInfo(tree: Tree): String = {
+  def tpeName(sym: Symbol): String = sym.tpe.toString match {
+    case "java.lang.Object" => "Object"
+    case str => str
+  }
+
+  def treeInfo(tree: Tree): String = {
     if(tree == null) return "null"
     "cls: " + tree.getClass.getSimpleName +
     "   tpe: " + tree.tpe +
@@ -98,7 +103,7 @@ abstract class Utility {
     }
 
     // see https://developer.mozilla.org/en/JavaScript/Reference/Reserved_Words
-    private val jsReservedWords = Set(
+    val jsReservedWords = Set(
       "break", "case", "catch", "continue", "debugger", "default", "delete",
       "do", "else", "finally", "for", "function", "if", "in", "instanceof",
       "new", "return", "switch", "this", "throw", "try", "typeof", "var",

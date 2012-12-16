@@ -18,6 +18,12 @@ class TrimTrans[G <: Global](val global: G) extends TreeTrans {
     trace(treeInfo(tree))
     tree match {
 
+      case PackageDef(Select(qual, name), stats) =>
+        val p1 = PackageDef(Ident(name), stats).setSymbol(tree.symbol)
+        val p2 = PackageDef(qual.asInstanceOf[RefTree], List(p1))
+        p2.setSymbol(tree.symbol.owner)
+        transform(p2)
+
       case p: PackageDef =>
         scope.scope(p) { super.transform(tree) }
 
